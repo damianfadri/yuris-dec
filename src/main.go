@@ -5,15 +5,60 @@ import (
 	"os"
 	"bufio"
 	"log"
+	"path/filepath"
 	
 	"github.com/damianfadri/yuris-decompiler/utils/dsa"
 	"github.com/damianfadri/yuris-decompiler/yuris"
 )
 
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
+}
+
 func main() {
-	script := yuris.ReadYST("G:\\Erewhon\\02_extracted\\ysbin\\yst00042.ybn")	
-	labels := yuris.ReadYSL("G:\\Erewhon\\02_extracted\\ysbin\\ysl.ybn")
-	compiler := yuris.ReadYSCom("G:\\Code\\github-yuris-decompiler\\yu-ris_0481_002\\システム\\system\\YSCom\\YSCom.ycd")
+	if len(os.Args) < 2 {
+		log.Fatal("Missing yst00xxx.ybn path.")
+	}
+
+	if len(os.Args) < 3 {
+		log.Fatal("Missing YSCom.ycd path.")
+	}
+
+	if len(os.Args) < 4 {
+		log.Fatal("Missing output path.")
+	}
+
+	args := os.Args[1:]
+
+	scriptPath := args[0]
+	if isExists, _ := exists(scriptPath); !isExists {
+		log.Fatal("Script file does not exist.")
+	}
+
+	script := yuris.ReadYST(scriptPath)	
+
+	ysbinPath := filepath.Dir(scriptPath)
+	labelsPath := filepath.Join(ysbinPath, "ysl.ybn")
+	if isExists, _ := exists(labelsPath); !isExists {
+		log.Fatal("ysl.ybn does not exist.")
+	}
+
+	labels := yuris.ReadYSL(labelsPath)
+
+	yscomPath := args[1]
+	if isExists, _ := exists(yscomPath); !isExists {
+		log.Fatal("YSCom.ycd does not exist.")
+	}
+	compiler := yuris.ReadYSCom(yscomPath)
 
 	// Get labels for the current script
 	scriptLabels := dsa.NewList[yuris.Label]()
@@ -199,7 +244,8 @@ func main() {
 
 	lines.Reverse()
 
-	file, err := os.Create("G:\\Code\\github-yuris-decompiler\\lines.txt")
+	outputPath := args[2]
+	file, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatal("")
 	}
