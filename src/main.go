@@ -5,6 +5,8 @@ import (
 	"os"
 	"bufio"
 	"log"
+	"regexp"
+	"strconv"
 	"path/filepath"
 	
 	"github.com/damianfadri/yuris-decompiler/utils/dsa"
@@ -40,6 +42,18 @@ func main() {
 	args := os.Args[1:]
 
 	scriptPath := args[0]
+
+	r, _ := regexp.Compile(".*yst0*(\\d+)\\.ybn")
+	submatch := r.FindStringSubmatch(scriptPath)
+	if len(submatch) < 2 {
+		log.Fatal("Invalid script file name.")
+	}
+
+	scriptId, err := strconv.Atoi(submatch[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if isExists, _ := exists(scriptPath); !isExists {
 		log.Fatal("Script file does not exist.")
 	}
@@ -64,7 +78,7 @@ func main() {
 	scriptLabels := dsa.NewList[yuris.Label]()
 	for i := 0; i < len(labels); i++ {
 		label := labels[i]
-		if (label.ScriptIndex == 42) {
+		if (label.ScriptIndex == int16(scriptId)) {
 			scriptLabels.Add(label)
 		}
 	}
